@@ -1,5 +1,5 @@
 {
-    "name": "oids smaller",
+    "name": "oids with landing mechanic",
     "description": "",
     "dependencies": {
         "device": "*",

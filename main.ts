@@ -15,6 +15,15 @@ namespace SpriteKind {
 namespace StatusBarKind {
     export const saved = StatusBarKind.create()
 }
+scene.onHitWall(SpriteKind.Player, function (sprite, location) {
+    if (ship.isHittingTile(CollisionDirection.Bottom) && facing == 0 && (velocityx < 11 && velocityy < 11)) {
+        velocityx = 0
+        velocityy = 0
+        shipcontrolled = "none"
+    } else {
+        ship.destroy()
+    }
+})
 controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
     if (shipcontrolled == "ship") {
         music.playTone(247, music.beat(BeatFraction.Sixteenth))
@@ -188,34 +197,30 @@ controller.up.onEvent(ControllerButtonEvent.Pressed, function () {
         }
         projectile2.lifespan = 100
         projectile2.setKind(SpriteKind.jet)
+    } else if (shipcontrolled == "none") {
+        projectile2 = sprites.createProjectileFromSprite(img`
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . 4 . . . . . . . . 
+            2 . . 2 . . 5 4 2 . . 4 2 2 2 . 
+            2 4 2 . 4 4 2 4 5 4 2 . 4 4 2 . 
+            . . 2 2 4 . 5 2 5 4 . 4 4 4 . . 
+            . 4 4 . . 2 2 2 . . . 2 2 2 . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            . . . . . . . . . . . . . . . . 
+            `, ship, 0, 0)
+        projectile2.setFlag(SpriteFlag.DestroyOnWall, true)
+        projectile2.lifespan = 20
+        velocityy += -10
+        shipcontrolled = "ship"
     }
-})
-sprites.onOverlap(SpriteKind.tractor, SpriteKind.prisoner, function (sprite, otherSprite) {
-    sprite.destroy()
-    otherSprite.destroy(effects.rings, 100)
-    pod = sprites.create(img`
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . 7 7 7 . . . . . . . . 
-        . . . . 7 7 7 7 7 . . . . . . . 
-        . . . 7 7 1 1 1 7 7 . . . . . . 
-        . . . 7 7 f 1 f 7 7 . . . . . . 
-        . . . 7 7 1 1 1 7 7 . . . . . . 
-        . . . 7 7 7 7 7 7 . . . . . . . 
-        . . . . . 7 7 7 7 . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        `, SpriteKind.saved)
-    pod.setPosition(sprite.x, sprite.y)
-    music.playMelody("C D E F G A B C5 ", 500)
-    pod.follow(mothership, 15)
-    pod.setFlag(SpriteFlag.BounceOnWall, true)
-    saved += 1
 })
 controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
     if (shipcontrolled == "ship") {
@@ -444,7 +449,7 @@ function makeShip () {
     velocityy = 10
     ship.setPosition(mothership.x, mothership.y + 5)
     scene.cameraFollowSprite(ship)
-    ship.setFlag(SpriteFlag.DestroyOnWall, true)
+    mothership.setVelocity(5, -50)
 }
 controller.right.onEvent(ControllerButtonEvent.Repeated, function () {
     facing += 1
@@ -452,6 +457,13 @@ controller.right.onEvent(ControllerButtonEvent.Repeated, function () {
         facing = 0
     }
     pause(100)
+})
+sprites.onOverlap(SpriteKind.Player, SpriteKind.prisoner, function (sprite, otherSprite) {
+    if (shipcontrolled == "none") {
+        otherSprite.destroy(effects.rings, 100)
+        music.playMelody("C D E F G A B C5 ", 500)
+        saved += 1
+    }
 })
 controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
     if (shipcontrolled == "ship") {
@@ -662,6 +674,9 @@ function makelargeasteroid () {
     largeasteroid.setFlag(SpriteFlag.BounceOnWall, true)
     tiles.placeOnRandomTile(largeasteroid, assets.tile`tile3`)
 }
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Player, function (sprite, otherSprite) {
+	
+})
 controller.menu.onEvent(ControllerButtonEvent.Pressed, function () {
     tiles.placeOnRandomTile(ship, assets.tile`tile2`)
 })
@@ -761,11 +776,10 @@ let person: Sprite = null
 let cannon: Sprite = null
 let base: Sprite = null
 let ladder1: Sprite = null
-let pod: Sprite = null
-let velocityx = 0
-let velocityy = 0
-let ship: Sprite = null
 let projectile2: Sprite = null
+let velocityy = 0
+let velocityx = 0
+let ship: Sprite = null
 let mothership: Sprite = null
 let shipcontrolled = ""
 let saved = 0
@@ -916,6 +930,11 @@ game.onUpdate(function () {
                 . . . . . . . . . . 
                 `)
         }
+    } else if (shipcontrolled == "none") {
+        ship.setVelocity(velocityx, velocityy)
+        statusbar.value = saved / prisonersleft * 100
+    } else {
+    	
     }
 })
 game.onUpdateInterval(2000, function () {
